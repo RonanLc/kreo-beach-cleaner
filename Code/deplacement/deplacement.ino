@@ -1,5 +1,12 @@
 #include <math.h>
 
+//### parameters bluetooth sensor ###
+bool goodWidth=false, goodLength=false;
+bool again=false;
+int value;
+int val; //informations if the user set the width or the length
+float rank=0.1;
+
 //### parameters ultrasonic sensor ###
 #define trigPin 7  //pin 7
 #define echoPin 8  //pin 8
@@ -49,6 +56,11 @@ long timeSave;
 void setup() {
   Serial.begin(9600);
 
+  //### setup bluetooth sensor ###
+  Serial1.begin(9600);
+  Serial1.print("*1"+String("")+"*");
+  Serial1.print("*2"+String("")+"*");
+
   //### setup ultrasonic sensor ###
   pinMode(trigPin, OUTPUT);  // Sets the trigPin as an Output
   pinMode(echoPin, INPUT);   // Sets the echoPin as an Input
@@ -80,14 +92,14 @@ void loop() {
     }
 
     // ***** attendre les infos bluetooth et setup everything *****
-
-    length = 5;
-    width = 3;
-
-    robotState = 0;
+    while (robotState==3){
+    setSetup();          //configure la longueur et la largeur 
+    checkStartCycle();   // change le statue du robot si le cycle de nettoyage peut commencer
+    }
   }
 
-  // ajouter une fonction "si recois stop du bluetooth, mettre robotState à 4" aka nettoyage en pause
+  // si recois stop du bluetooth, mettre le nettoyage en pause
+  changeRobotState();
 
   if(robotState != 3 && robotState != 4){
 
@@ -198,6 +210,80 @@ void turn(int orientation){
   }                            //
   timer[0] = millis();         //
 }
+// ### FONCTION POUR CATPEUR BLUETOOTH ###
+bool checkZone(){   // verrifie si la valeur est bien un chiffre
+  if  (value<0 || value>9){
+    Serial.println("not good");
+    Serial.println(val);
+    Serial1.print("*"+String(val)+String("Incorrect values")+"*");
+    return false;
+  }
+  return true;
+}
+void good(){
+  Serial1.print("*"+String(val)+String("Good")+"*");
+  if (val==1){goodWidth=true;}
+  else{goodLength=true;}
+}
+void setValue(){
+  if(val==1){width=width*rank+value;}
+  else {length=length*rank+value;}
+}
+void setSetup(){
+  if (Serial1.available()){  //si on capte le bluetooth : 
+    value=Serial1.read()-48; //on lit la valeur que l'application envoie
+    if(value==60){          //si c'est cette valeur, ca correspond à la largeur
+      again=true;
+      goodWidth=false;      // la largeur n'est plus bonne
+      Serial.println("It is a width");
+      val=1;
+      rank=0.1;
+      width=0;
+    }
+    else if (value==28){     //si c'est cette valeur, ca correspond à la longueur
+      again=true;
+      goodLength=false;      //la longueur n'est plus bonne
+      Serial.println("It is a length");
+      val=2;
+      rank=0.1;
+      length=0;
+    } 
+    else if (value==22){     //si c'est la fin de la reception 
+      Serial.print("The width is : ");
+      Serial.println(width);
+      Serial.print("The length is : ");
+      Serial.println(length);
+    }
+    else if (!checkZone()){// si la valeur n'est pas un chiffre correcte
+      again=false;
+    }
+    else if (again){   // on regarde les chiffres envoyés
+      rank*=10;
+      setValue();
+      good();
+    }
+  }
+}
+//Verrifie que tout soit bon pour commencer un cycle de nettoyage
+void checkStartCycle(){
+  if (Serial1.available()){
+    val=Serial1.read();
+    if(goodLength && goodWidth && val=="m"){ 
+      robotState=0;
+    }
+  }
+}
+//Si la longueur et la largeur sont bonne regarde dans quel état est le robot (arret ou marche)
+void changeRobotState(){
+  if(goodLength && goodWidth){   
+    if (Serial1.available()){
+      val=Serial1.read();
+      if (val=="m"){robotState=1;}
+      else if (val=="p"){robotState=2;}
+    }
+  }
+}
+
 
 // ### FONCTION POUR CAPTEUR ULTRA-SON ###
 
