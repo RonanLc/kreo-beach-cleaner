@@ -7,9 +7,9 @@
 This project was carried out during an internship in Mauritius. The main objective was to design an autonomous robot capable of cleaning beaches while storing the collected waste. This project is part of an effort to preserve the environment and combat marine pollution.
 
 ## 🎯 Objectives
-- Beach cleaning** : Waste detection and collection.
-- Autonomy** : Navigation without human intervention.
-- Efficient storage**: Integration of a compartment for transporting collected waste.
+- **Beach cleaning** : Waste detection and collection.
+- **Autonomy** : Navigation without human intervention.
+- **Efficient storage**: Integration of a compartment for transporting collected waste.
 
 ## ⚙️ Main features
 
